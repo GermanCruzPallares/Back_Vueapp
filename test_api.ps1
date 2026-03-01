@@ -1,5 +1,5 @@
 # Setup common variables
-$baseUrl = "http://localhost:8080/api"
+$baseUrl = "http://localhost:5053/api"
 $loginBody = @{ username = 'admin'; password = 'admin123' } | ConvertTo-Json
 
 Write-Host "==============================================================="
@@ -75,13 +75,33 @@ Invoke-RestMethod -Uri "$baseUrl/Products/$prodId" -Method Put -Body $prodUpdate
 Write-Host "[OK] SUCCESS: Product $prodId Updated." -ForegroundColor Green
 
 # =======================================================
-# 5. CRUDS - DELETION (CLEANUP)
+# 5. TEST RBAC (REGULAR USER SHOULD NOT BE ABLE TO DELETE)
 # =======================================================
-Write-Host "`n[TEST 9] Testing DELETE Product"
+Write-Host "`n[TEST 9] Testing DELETE Product as Regular User (Should be Forbidden)"
+$userLoginBody = @{ username = 'testuser'; password = 'user123' } | ConvertTo-Json
+try {
+    $userResponse = Invoke-RestMethod -Uri "$baseUrl/Auth/login" -Method Post -Body $userLoginBody -ContentType "application/json" -ErrorAction Stop
+    $userHeaders = @{ Authorization = "Bearer $($userResponse.token)" }
+    
+    Invoke-RestMethod -Uri "$baseUrl/Products/$prodId" -Method Delete -Headers $userHeaders -ErrorAction Stop
+    Write-Host " [X] FAILED: Regular user was able to delete the product!" -ForegroundColor Red
+} catch [System.Net.WebException] {
+    $r = $_.Exception.Response
+    if ($r.StatusCode -eq [System.Net.HttpStatusCode]::Forbidden) {
+        Write-Host " [OK] SUCCESS: API returned 403 Forbidden as expected." -ForegroundColor Green
+    } else {
+        Write-Host " [X] FAILED: Unexpected error status - $($r.StatusCode)" -ForegroundColor Red
+    }
+}
+
+# =======================================================
+# 6. CRUDS - DELETION (CLEANUP AS ADMIN)
+# =======================================================
+Write-Host "`n[TEST 10] Testing DELETE Product as Admin"
 Invoke-RestMethod -Uri "$baseUrl/Products/$prodId" -Method Delete -Headers $headers
 Write-Host " [OK] SUCCESS: Product $prodId Deleted." -ForegroundColor Green
 
-Write-Host "`n[TEST 10] Testing DELETE Category"
+Write-Host "`n[TEST 11] Testing DELETE Category as Admin"
 Invoke-RestMethod -Uri "$baseUrl/Categories/$catId" -Method Delete -Headers $headers
 Write-Host " [OK] SUCCESS: Category $catId Deleted." -ForegroundColor Green
 
