@@ -1,0 +1,6 @@
+@Back_Vueapp_HostAddress = http://localhost:5053
+
+GET {{Back_Vueapp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
