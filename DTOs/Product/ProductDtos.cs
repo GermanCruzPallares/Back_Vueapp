@@ -11,6 +11,7 @@ namespace Back_Vueapp.DTOs.Product
         public decimal Price { get; set; }
         public required string CategoryName { get; set; }
         public int CategoryId { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public class ProductCreateDto
@@ -33,5 +34,11 @@ namespace Back_Vueapp.DTOs.Product
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public int CategoryId { get; set; }
+    }
+
+    public class PagedProductResponse
+    {
+        public List<ProductDto> Items { get; set; } = new();
+        public int TotalItems { get; set; }
     }
 }

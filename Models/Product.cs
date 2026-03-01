@@ -11,5 +11,6 @@ namespace Back_Vueapp.Models
         public required decimal Price { get; set; }
         public required int CategoryId { get; set; }
         public Category? Category { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

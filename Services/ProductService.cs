@@ -18,18 +18,26 @@ namespace Back_Vueapp.Services
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
             var products = await _productRepository.GetProductsWithCategoryAsync();
-            return products.Select(p => new ProductDto
+            return products.Select(p => MapToDto(p));
+        }
+
+        public async Task<PagedProductResponse> GetPagedProductsAsync(
+            string? search, 
+            int page, 
+            int pageSize, 
+            string? sortBy, 
+            bool isAscending, 
+            int? categoryId = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            var (items, totalCount) = await _productRepository.GetPagedAsync(search, page, pageSize, sortBy, isAscending, categoryId, startDate, endDate);
+            
+            return new PagedProductResponse
             {
-                Id = p.Id,
-                Name = p.Name,
-                Brand = p.Brand,
-                Size = p.Size,
-                Color = p.Color,
-                Description = p.Description,
-                Price = p.Price,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category?.Name ?? "Unknown"
-            });
+                Items = items.Select(p => MapToDto(p)).ToList(),
+                TotalItems = totalCount
+            };
         }
 
         public async Task<ProductDto?> GetProductByIdAsync(int id)
@@ -37,18 +45,7 @@ namespace Back_Vueapp.Services
             var p = await _productRepository.GetProductWithCategoryByIdAsync(id);
             if (p == null) return null;
 
-            return new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Brand = p.Brand,
-                Size = p.Size,
-                Color = p.Color,
-                Description = p.Description,
-                Price = p.Price,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category?.Name ?? "Unknown"
-            };
+            return MapToDto(p);
         }
 
         public async Task<ProductDto> CreateProductAsync(ProductCreateDto dto)
@@ -69,19 +66,9 @@ namespace Back_Vueapp.Services
 
             // Load category name for response
             var category = await _categoryRepository.GetByIdAsync(product.CategoryId);
+            product.Category = category;
 
-            return new ProductDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                Brand = product.Brand,
-                Size = product.Size,
-                Color = product.Color,
-                Description = product.Description,
-                Price = product.Price,
-                CategoryId = product.CategoryId,
-                CategoryName = category?.Name ?? "Unknown"
-            };
+            return MapToDto(product);
         }
 
         public async Task<bool> UpdateProductAsync(int id, ProductUpdateDto dto)
@@ -108,6 +95,23 @@ namespace Back_Vueapp.Services
 
             _productRepository.Remove(product);
             return await _productRepository.SaveChangesAsync();
+        }
+
+        private static ProductDto MapToDto(Product p)
+        {
+            return new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Brand = p.Brand,
+                Size = p.Size,
+                Color = p.Color,
+                Description = p.Description,
+                Price = p.Price,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category?.Name ?? "Unknown",
+                CreatedAt = p.CreatedAt
+            };
         }
     }
 }

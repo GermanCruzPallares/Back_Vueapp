@@ -59,9 +59,9 @@ Write-Host " [OK] SUCCESS: Category $catId Updated." -ForegroundColor Green
 # =======================================================
 # 4. CRUDS - PRODUCTS
 # =======================================================
-Write-Host "`n[TEST 6] Testing GET Products"
-$products = Invoke-RestMethod -Uri "$baseUrl/Products" -Method Get -Headers $headers
-Write-Host " [OK] SUCCESS: Found $($products.Count) products." -ForegroundColor Green
+Write-Host "`n[TEST 6] Testing GET Products (Paged default)"
+$productsResponse = Invoke-RestMethod -Uri "$baseUrl/Products" -Method Get -Headers $headers
+Write-Host " [OK] SUCCESS: Found $($productsResponse.items.Count) products in current page." -ForegroundColor Green
 
 Write-Host "`n[TEST 7] Testing POST Product"
 $prodBody = @{ name = "Test Shoe"; price = 99.99; categoryId = $catId } | ConvertTo-Json
@@ -104,6 +104,30 @@ Write-Host " [OK] SUCCESS: Product $prodId Deleted." -ForegroundColor Green
 Write-Host "`n[TEST 11] Testing DELETE Category as Admin"
 Invoke-RestMethod -Uri "$baseUrl/Categories/$catId" -Method Delete -Headers $headers
 Write-Host " [OK] SUCCESS: Category $catId Deleted." -ForegroundColor Green
+
+# =======================================================
+# 7. TEST PAGED SEARCH
+# =======================================================
+Write-Host "`n[TEST 12] Testing Paged Search (Page 1, Size 5, Sorting by Name)"
+$searchUrl = "$baseUrl/Products?page=1&pageSize=5&sortBy=name&isAscending=true"
+try {
+    $searchResponse = Invoke-RestMethod -Uri $searchUrl -Method Get -Headers $headers -ErrorAction Stop
+    $count = $searchResponse.items.Count
+    $total = $searchResponse.totalItems
+    Write-Host " [OK] SUCCESS: Received $count items (Total in DB: $total)" -ForegroundColor Green
+    Write-Host " [INFO] First element name: $($searchResponse.items[0].name)"
+} catch {
+    Write-Host " [X] FAILED: Could not perform paged search." -ForegroundColor Red
+}
+
+Write-Host "`n[TEST 13] Testing Filtered Search (Search: 'Air Max')"
+$filterUrl = "$baseUrl/Products?search=Air%20Max"
+try {
+    $filterResponse = Invoke-RestMethod -Uri $filterUrl -Method Get -Headers $headers -ErrorAction Stop
+    Write-Host " [OK] SUCCESS: Found $($filterResponse.items.Count) products matching 'Air Max'." -ForegroundColor Green
+} catch {
+    Write-Host " [X] FAILED: Could not filter products." -ForegroundColor Red
+}
 
 Write-Host "`n==============================================================="
 Write-Host " [OK] ALL TESTS COMPLETED SUCCESSFULLY" -ForegroundColor Cyan

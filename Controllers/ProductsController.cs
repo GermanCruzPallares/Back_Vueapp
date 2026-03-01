@@ -17,12 +17,32 @@ namespace Back_Vueapp.Controllers
             _productService = productService;
         }
 
+        // Paged and filtered search
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
+        public async Task<ActionResult<PagedProductResponse>> GetProducts(
+            [FromQuery] string? search = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 12,
+            [FromQuery] string? sortBy = "id",
+            [FromQuery] bool isAscending = false,
+            [FromQuery] int? categoryId = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            var result = await _productService.GetPagedProductsAsync(
+                search, page, pageSize, sortBy, isAscending, categoryId, startDate, endDate);
+            return Ok(result);
+        }
+
+        // Return all products for dashboard/charts
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts()
         {
             var products = await _productService.GetAllProductsAsync();
             return Ok(products);
         }
+
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetProduct(int id)
